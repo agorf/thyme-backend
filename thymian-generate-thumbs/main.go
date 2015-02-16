@@ -16,65 +16,51 @@ import (
 )
 
 const (
-	thumbsDir      = "public/thumbs"
-	bigThumbSize   = "1000"
-	smallThumbSize = "200"
-	workers        = 4 // should be at least 1
+	thumbsDir = "public/thumbs"
+	workers   = 4 // should be at least 1
 )
 
-func generateSmallThumb(photoPath, identifier string) (thumbPath string, err error) {
-	thumbPath = path.Join(thumbsDir, fmt.Sprintf("%s_small.jpg", identifier))
-
-	absThumbPath, err := filepath.Abs(thumbPath)
+func generateThumb(photoPath, baseName, thumbSize string, crop bool) (thumbPath string, err error) {
+	thumbPath, err = filepath.Abs(baseName)
 	if err != nil {
 		return
 	}
 
-	if _, err = os.Stat(thumbPath); os.IsNotExist(err) { // file does not exist
-		err = exec.Command(
-			"vipsthumbnail", photoPath,
-			"--rotate",
-			"--size", smallThumbSize,
-			"--crop",
-			"--interpolator", "bicubic",
-			"--output", absThumbPath+"[Q=97,no_subsample,strip]").Run()
-	}
-
-	return
-}
-
-func generateBigThumb(photoPath, identifier string) (thumbPath string, err error) {
-	thumbPath = path.Join(thumbsDir, fmt.Sprintf("%s_big.jpg", identifier))
-
-	absThumbPath, err := filepath.Abs(thumbPath)
-	if err != nil {
+	if _, err = os.Stat(thumbPath); err == nil { // file exists
 		return
 	}
 
-	if _, err = os.Stat(thumbPath); os.IsNotExist(err) { // file does not exist
-		err = exec.Command(
-			"vipsthumbnail", photoPath,
-			"--rotate",
-			"--size", bigThumbSize,
-			"--interpolator", "bicubic",
-			"--output", absThumbPath+"[Q=97,no_subsample,strip]").Run()
+	vipsOpts := []string{
+		"--rotate",
+		"--size", thumbSize,
+		"--interpolator", "bicubic",
+		"--output", thumbPath + "[Q=97,no_subsample,strip]",
 	}
+
+	if crop {
+		vipsOpts = append(vipsOpts, "--crop")
+	}
+
+	cmdArgs := append([]string{photoPath}, vipsOpts...)
+	err = exec.Command("vipsthumbnail", cmdArgs...).Run()
 
 	return
 }
 
 func generateThumbsImpl(photoPath string) (err error) {
 	smallThumbPhotoPath := photoPath
-	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
 
-	bigThumbPath, err := generateBigThumb(photoPath, identifier)
+	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
+	thumbPathFmt := path.Join(thumbsDir, fmt.Sprintf("%s_%%s.jpg", identifier))
+
+	bigThumbPath, err := generateThumb(photoPath, fmt.Sprintf(thumbPathFmt, "big"), "1000", false)
 	if err == nil {
 		smallThumbPhotoPath = bigThumbPath // create small thumb from big for speed
 	} else {
 		log.Println("Failed to create", bigThumbPath, "for", photoPath, "with error:", err)
 	}
 
-	smallThumbPath, err := generateSmallThumb(smallThumbPhotoPath, identifier)
+	smallThumbPath, err := generateThumb(smallThumbPhotoPath, fmt.Sprintf(thumbPathFmt, "small"), "200", true)
 	if err != nil {
 		log.Println("Failed to create", smallThumbPath, "for", photoPath, "with error:", err)
 	}

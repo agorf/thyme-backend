@@ -70,9 +70,14 @@ func generateThumbsImpl(photoPath string) (err error) {
 	bigThumbPath, err := generateBigThumb(photoPath, identifier)
 	if err == nil {
 		smallThumbPhotoPath = bigThumbPath // create small thumb from big for speed
+	} else {
+		log.Println("Failed to create", bigThumbPath, "for", photoPath, "with error:", err)
 	}
 
-	_, err = generateSmallThumb(smallThumbPhotoPath, identifier)
+	smallThumbPath, err := generateSmallThumb(smallThumbPhotoPath, identifier)
+	if err != nil {
+		log.Println("Failed to create", smallThumbPath, "for", photoPath, "with error:", err)
+	}
 
 	return
 }
@@ -89,13 +94,15 @@ func generateThumbs(ch chan string, wg *sync.WaitGroup, bar *pb.ProgressBar) {
 func main() {
 	var photosCount int
 
-	if workers < 1 {
-		log.Fatal("number of workers must be at least 1")
+	logFile, err := os.Create("thymian-generate-thumbs.log")
+	if err == nil {
+		log.SetOutput(logFile)
 	}
+	defer logFile.Close()
 
 	db, err := sql.Open("sqlite3", "thyme.db")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("Failed to open database:", err)
 	}
 	defer db.Close()
 
@@ -105,17 +112,18 @@ func main() {
 	ORDER BY sets.taken_at DESC, photos.taken_at ASC
 	`)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("Failed to query photos table:", err)
 	}
 	defer rows.Close()
 
 	err = db.QueryRow("SELECT COUNT(*) FROM photos").Scan(&photosCount)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("Failed to get photos count:", err)
 	}
 
-	if err := os.MkdirAll(thumbsDir, os.ModeDir|0755); err != nil {
-		log.Fatal(err)
+	err = os.MkdirAll(thumbsDir, os.ModeDir|0755)
+	if err != nil {
+		log.Fatalln("Failed to create thumbs directory:", err)
 	}
 
 	ch := make(chan string)
@@ -129,7 +137,9 @@ func main() {
 
 	for rows.Next() {
 		var photoPath string
-		rows.Scan(&photoPath)
+		if err := rows.Scan(&photoPath); err != nil {
+			log.Fatalln("Failed to get photo path:", err)
+		}
 		ch <- photoPath
 	}
 
@@ -137,6 +147,12 @@ func main() {
 	wg.Wait()
 
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
+	}
+
+	// Remove empty log file
+	logFileInfo, err := logFile.Stat()
+	if err == nil && logFileInfo.Size() == 0 {
+		os.Remove(logFileInfo.Name())
 	}
 }

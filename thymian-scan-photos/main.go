@@ -255,7 +255,7 @@ func storePhoto(photo *Photo) error {
 	return nil
 }
 
-func walk(path string, info os.FileInfo, err error) error {
+func walkPath(path string, info os.FileInfo, err error) error {
 	if err != nil { // error walking "path"
 		return nil // skip
 	}
@@ -441,7 +441,7 @@ func main() {
 	defer insertPhotoStmt.Close()
 
 	for i := 1; i < len(os.Args); i++ {
-		filepath.Walk(os.Args[i], walk)
+		filepath.Walk(os.Args[i], walkPath)
 	}
 
 	updatePhotoSiblings()

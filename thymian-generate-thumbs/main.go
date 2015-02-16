@@ -19,7 +19,7 @@ const (
 	thumbsDir      = "public/thumbs"
 	bigThumbSize   = "1000"
 	smallThumbSize = "200"
-	workers        = 4 // min: 1
+	workers        = 4 // should be at least 1
 )
 
 func generateSmallThumb(photoPath, identifier string) (thumbPath string, err error) {

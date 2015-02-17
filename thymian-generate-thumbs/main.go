@@ -47,7 +47,7 @@ func generateThumb(photoPath, baseName, thumbSize string, crop bool) (thumbPath 
 	return
 }
 
-func generateThumbsImpl(photoPath string) (err error) {
+func generateThumbs(photoPath string) (err error) {
 	smallThumbPhotoPath := photoPath
 
 	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
@@ -66,15 +66,6 @@ func generateThumbsImpl(photoPath string) (err error) {
 	}
 
 	return
-}
-
-func generateThumbs(ch chan string, wg *sync.WaitGroup, bar *pb.ProgressBar) {
-	defer wg.Done()
-
-	for photoPath := range ch {
-		generateThumbsImpl(photoPath)
-		bar.Increment()
-	}
 }
 
 func main() {
@@ -118,7 +109,14 @@ func main() {
 
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go generateThumbs(ch, &wg, bar)
+		go func() {
+			for photoPath := range ch {
+				generateThumbs(photoPath)
+				bar.Increment()
+			}
+
+			wg.Done()
+		}()
 	}
 
 	for rows.Next() {

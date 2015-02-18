@@ -1,4 +1,4 @@
-# thymian
+# thyme-backend
 
 Backend companion to [thyme](https://github.com/agorf/thyme/)
 

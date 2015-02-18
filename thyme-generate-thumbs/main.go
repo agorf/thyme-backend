@@ -71,7 +71,7 @@ func generateThumbs(photoPath string) (err error) {
 func main() {
 	var photosCount int
 
-	logFile, err := os.Create("thymian-generate-thumbs.log")
+	logFile, err := os.Create("thyme-generate-thumbs.log")
 	if err == nil {
 		log.SetOutput(logFile)
 	}

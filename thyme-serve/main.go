@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -50,13 +51,12 @@ func badRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, http.StatusBadRequest, "Bad Request")
 }
 
-func requireParam(param string, w http.ResponseWriter, r *http.Request) bool {
+func requireParam(param string, w http.ResponseWriter, r *http.Request) error {
 	if len(r.URL.Query()[param]) == 0 {
 		badRequest(w, r)
-		return false
+		return errors.New(fmt.Sprintf("missing %s parameter", param))
 	}
-
-	return true
+	return nil
 }
 
 func getSetById(setId int) (*Set, error) {
@@ -74,7 +74,7 @@ func getSetById(setId int) (*Set, error) {
 }
 
 func getSetHandler(w http.ResponseWriter, r *http.Request) {
-	if requireParam("id", w, r) == false {
+	if requireParam("id", w, r) != nil {
 		return
 	}
 

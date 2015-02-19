@@ -403,30 +403,30 @@ func main() {
 
 	db, err = sql.Open("sqlite3", "thyme.db") // := here covers global db var
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	defer db.Close()
 
 	_, err = db.Exec(createSchemaSQL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	selectSetStmt, err = db.Prepare("SELECT id FROM sets WHERE name = ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	defer selectSetStmt.Close()
 
 	selectPhotoStmt, err = db.Prepare("SELECT id FROM photos WHERE path = ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	defer selectPhotoStmt.Close()
 
 	insertSetStmt, err = db.Prepare("INSERT INTO sets (name) VALUES (?)")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	defer insertSetStmt.Close()
 
@@ -439,7 +439,7 @@ func main() {
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	defer insertPhotoStmt.Close()
 

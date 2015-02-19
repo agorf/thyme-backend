@@ -401,7 +401,7 @@ func main() {
 		return
 	}
 
-	db, err = sql.Open("sqlite3", "thyme.db")
+	db, err = sql.Open("sqlite3", "thyme.db") // := here covers global db var
 	if err != nil {
 		log.Fatal(err)
 	}

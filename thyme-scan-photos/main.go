@@ -29,7 +29,7 @@ type Photo struct {
 	Lng           sql.NullFloat64
 	Path          string
 	Size          int64
-	Taken         sql.NullString
+	TakenAt       sql.NullString
 	Width         int
 }
 
@@ -83,10 +83,10 @@ CREATE INDEX IF NOT EXISTS photos_next_photo_id_index ON photos (next_photo_id);
 `
 
 func decodePhotoExif(photo *Photo, x *exif.Exif) {
-	taken, err := x.DateTime()
+	takenAt, err := x.DateTime()
 	if err == nil {
-		photo.Taken.String = taken.UTC().Format("2006-01-02 15:04:05")
-		photo.Taken.Valid = true
+		photo.TakenAt.String = takenAt.UTC().Format("2006-01-02 15:04:05")
+		photo.TakenAt.Valid = true
 	}
 
 	lat, lng, err := x.LatLong()
@@ -242,7 +242,7 @@ func storePhoto(photo *Photo) error {
 		result, err := insertPhotoStmt.Exec(photo.Aperture, photo.Camera,
 			photo.ExposureComp, photo.ExposureTime, photo.Flash, photo.FocalLength,
 			photo.FocalLength35, photo.Height, photo.ISO, photo.Lat, photo.Lens,
-			photo.Lng, photo.Path, setId, photo.Size, photo.Taken, photo.Width) // create it
+			photo.Lng, photo.Path, setId, photo.Size, photo.TakenAt, photo.Width) // create it
 		if err != nil {
 			return err
 		}
@@ -371,15 +371,15 @@ func updateSets() error {
 
 	for rows.Next() {
 		var id, setId, photosCount int
-		var taken sql.NullString
+		var takenAt sql.NullString
 
-		rows.Scan(&id, &setId, &taken)
+		rows.Scan(&id, &setId, &takenAt)
 
 		row := photosCountStmt.QueryRow(setId)
 		row.Scan(&photosCount)
 
-		updateSetStmt.Exec(photosCount, taken, id, setId)
-		fmt.Printf("sets id=%d photos_count=%d taken=%q thumb_photo_id=%d\n", setId, photosCount, taken.String, id)
+		updateSetStmt.Exec(photosCount, takenAt, id, setId)
+		fmt.Printf("sets id=%d photos_count=%d taken_at=%q thumb_photo_id=%d\n", setId, photosCount, takenAt.String, id)
 	}
 
 	if err := rows.Err(); err != nil {

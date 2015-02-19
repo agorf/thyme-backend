@@ -366,8 +366,7 @@ func setupDatabase() {
 	photos.path`
 
 	getSetStmt, err = db.Prepare(fmt.Sprintf(`
-	SELECT %s
-	FROM sets
+	SELECT %s FROM sets
 	JOIN photos ON sets.thumb_photo_id = photos.id
 	WHERE sets.id = ?
 	`, setAttrs))
@@ -376,8 +375,7 @@ func setupDatabase() {
 	}
 
 	getSetsStmt, err = db.Prepare(fmt.Sprintf(`
-	SELECT %s
-	FROM sets
+	SELECT %s FROM sets
 	JOIN photos ON sets.thumb_photo_id = photos.id
 	ORDER BY sets.taken_at DESC
 	`, setAttrs))
@@ -390,18 +388,14 @@ func setupDatabase() {
 	next_photo_id, path, prev_photo_id, set_id, size, taken_at, width`
 
 	getPhotoStmt, err = db.Prepare(fmt.Sprintf(`
-	SELECT %s
-	FROM photos
-	WHERE id = ?
+	SELECT %s FROM photos WHERE id = ?
 	`, photoAttrs))
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)
 	}
 
 	getPhotosStmt, err = db.Prepare(fmt.Sprintf(`
-	SELECT %s
-	FROM photos
-	WHERE set_id = ?
+	SELECT %s FROM photos WHERE set_id = ?
 	`, photoAttrs))
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)

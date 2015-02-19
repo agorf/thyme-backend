@@ -22,10 +22,10 @@ var (
 
 type Set struct {
 	Id             int
-	ThumbPhotoId   int
 	Name           string
 	PhotosCount    int
 	TakenAt        sql.NullString
+	ThumbPhotoId   int
 	ThumbPhotoPath string
 }
 
@@ -37,9 +37,9 @@ func (s *Set) ThumbURL() string {
 func (s *Set) MarshalJSON() ([]byte, error) { // implements Marshaler
 	setMap := map[string]interface{}{
 		"id":             s.Id,
-		"thumb_photo_id": s.ThumbPhotoId,
 		"name":           s.Name,
 		"photos_count":   s.PhotosCount,
+		"thumb_photo_id": s.ThumbPhotoId,
 		"thumb_url":      s.ThumbURL(),
 	}
 	setMap["taken_at"], _ = s.TakenAt.Value()
@@ -64,10 +64,10 @@ func getSetById(setId int) (*Set, error) {
 	row := getSetStmt.QueryRow(setId)
 	err := row.Scan(
 		&set.Id,
-		&set.ThumbPhotoId,
 		&set.Name,
 		&set.PhotosCount,
 		&set.TakenAt,
+		&set.ThumbPhotoId,
 		&set.ThumbPhotoPath,
 	)
 	return &set, err
@@ -101,8 +101,10 @@ func main() {
 	defer db.Close()
 
 	getSetStmt, err = db.Prepare(`
-	SELECT sets.id, thumb_photo_id, name, photos_count, sets.taken_at, photos.path
-	FROM sets JOIN photos ON sets.thumb_photo_id = photos.id
+	SELECT
+	sets.id, name, photos_count, sets.taken_at, thumb_photo_id, photos.path
+	FROM sets
+	JOIN photos ON sets.thumb_photo_id = photos.id
 	WHERE sets.id = ?
 	`)
 	if err != nil {

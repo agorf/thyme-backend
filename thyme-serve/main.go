@@ -259,12 +259,11 @@ func getPhotoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(photo)
 }
 
-func main() {
+func setupDatabase() {
 	db, err := sql.Open("sqlite3", "thyme.db")
 	if err != nil {
 		log.Fatalln("Failed to open database:", err)
 	}
-	defer db.Close()
 
 	getSetStmt, err = db.Prepare(`
 	SELECT
@@ -276,7 +275,6 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)
 	}
-	defer getSetStmt.Close()
 
 	getPhotoStmt, err = db.Prepare(`
 	SELECT
@@ -289,6 +287,12 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)
 	}
+}
+
+func main() {
+	setupDatabase()
+	defer db.Close()
+	defer getSetStmt.Close()
 	defer getPhotoStmt.Close()
 
 	http.Handle("/", http.FileServer(http.Dir("public"))) // static

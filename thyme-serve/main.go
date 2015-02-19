@@ -62,9 +62,13 @@ type Photo struct {
 	Width         int64
 }
 
+func thumbURL(photoPath, suffix string) string {
+	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
+	return fmt.Sprintf("/thumbs/%s_%s.jpg", identifier, suffix)
+}
+
 func (s *Set) ThumbURL() string {
-	identifier := fmt.Sprintf("%x", md5.Sum([]byte(s.ThumbPhotoPath)))
-	return fmt.Sprintf("/thumbs/%s_small.jpg", identifier)
+	return thumbURL(s.ThumbPhotoPath, "small")
 }
 
 func (s *Set) MarshalJSON() ([]byte, error) { // implements Marshaler
@@ -114,10 +118,6 @@ func (p *Photo) Filename() string {
 	return path.Base(p.Path)
 }
 
-func (p *Photo) Identifier() string {
-	return fmt.Sprintf("%x", md5.Sum([]byte(p.Path)))
-}
-
 func (p *Photo) Orientation() string {
 	if p.Height > p.Width {
 		return "portrait"
@@ -125,12 +125,8 @@ func (p *Photo) Orientation() string {
 	return "landscape"
 }
 
-func (p *Photo) ThumbFilename(suffix string) string {
-	return fmt.Sprintf("%s_%s.jpg", p.Identifier(), suffix)
-}
-
 func (p *Photo) ThumbURL(suffix string) string {
-	return "/thumbs/" + p.ThumbFilename(suffix)
+	return thumbURL(p.Path, suffix)
 }
 
 func (p *Photo) MarshalJSON() ([]byte, error) { // implements Marshaler

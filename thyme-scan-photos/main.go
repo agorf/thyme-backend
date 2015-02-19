@@ -34,8 +34,11 @@ type Photo struct {
 }
 
 var (
-	db                                                             *sql.DB
-	selectSetStmt, selectPhotoStmt, insertSetStmt, insertPhotoStmt *sql.Stmt
+	db              *sql.DB
+	selectSetStmt   *sql.Stmt
+	selectPhotoStmt *sql.Stmt
+	insertSetStmt   *sql.Stmt
+	insertPhotoStmt *sql.Stmt
 )
 
 var createSchemaSQL = `

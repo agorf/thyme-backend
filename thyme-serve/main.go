@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -26,7 +25,7 @@ type Set struct {
 	ThumbPhotoId   int
 	Name           string
 	PhotosCount    int
-	TakenAt        time.Time
+	TakenAt        sql.NullString
 	ThumbPhotoPath string
 }
 
@@ -36,14 +35,15 @@ func (s *Set) ThumbURL() string {
 }
 
 func (s *Set) MarshalJSON() ([]byte, error) { // implements Marshaler
-	return json.Marshal(map[string]interface{}{
+	setMap := map[string]interface{}{
 		"id":             s.Id,
 		"thumb_photo_id": s.ThumbPhotoId,
 		"name":           s.Name,
 		"photos_count":   s.PhotosCount,
-		"taken_at":       s.TakenAt,
 		"thumb_url":      s.ThumbURL(),
-	})
+	}
+	setMap["taken_at"], _ = s.TakenAt.Value()
+	return json.Marshal(setMap)
 }
 
 func badRequest(w http.ResponseWriter, r *http.Request) {

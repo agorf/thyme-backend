@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS sets (
 	thumb_photo_id integer UNIQUE REFERENCES photos,
 	name varchar(4096) NOT NULL UNIQUE,
 	photos_count integer,
-	taken_at datetime
+	taken_at char(19)
 );
 
 CREATE INDEX IF NOT EXISTS sets_thumb_photo_id_index ON sets (thumb_photo_id);
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS photos (
 	lat decimal(9, 6),
 	lens varchar(1000),
 	lng decimal(9, 6),
-	taken_at datetime
+	taken_at char(19)
 );
 
 CREATE INDEX IF NOT EXISTS photos_set_id_index ON photos (set_id);

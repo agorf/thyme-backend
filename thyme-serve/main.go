@@ -25,9 +25,11 @@ const (
 )
 
 var (
-	db           *sql.DB
-	getSetStmt   *sql.Stmt
-	getPhotoStmt *sql.Stmt
+	db            *sql.DB
+	getSetStmt    *sql.Stmt
+	getSetsStmt   *sql.Stmt
+	getPhotoStmt  *sql.Stmt
+	getPhotosStmt *sql.Stmt
 )
 
 type Set struct {
@@ -60,6 +62,11 @@ type Photo struct {
 	Size          int
 	TakenAt       sql.NullString
 	Width         int64
+}
+
+// used by scanSet and scanPhoto to accept row(s)
+type RowScanner interface {
+	Scan(dest ...interface{}) error
 }
 
 func thumbURL(photoPath, suffix string) string {
@@ -169,6 +176,11 @@ func badRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, http.StatusBadRequest, "Bad Request")
 }
 
+func internalServerError(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintln(w, http.StatusInternalServerError, "Internal Server Error")
+}
+
 func requireParam(param string, w http.ResponseWriter, r *http.Request) error {
 	if len(r.URL.Query()[param]) == 0 {
 		badRequest(w, r)
@@ -177,10 +189,8 @@ func requireParam(param string, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func getSetById(setId int) (*Set, error) {
-	set := Set{}
-	row := getSetStmt.QueryRow(setId)
-	err := row.Scan(
+func scanSet(row RowScanner, set *Set) error {
+	return row.Scan(
 		&set.Id,
 		&set.Name,
 		&set.PhotosCount,
@@ -188,13 +198,37 @@ func getSetById(setId int) (*Set, error) {
 		&set.ThumbPhotoId,
 		&set.ThumbPhotoPath,
 	)
-	return &set, err
 }
 
-func getPhotoById(photoId int) (*Photo, error) {
-	photo := Photo{}
-	row := getPhotoStmt.QueryRow(photoId)
-	err := row.Scan(
+func getSetById(setId int) (set *Set, err error) {
+	set = &Set{}
+	row := getSetStmt.QueryRow(setId)
+	err = scanSet(row, set)
+	return
+}
+
+func getSets() (sets []*Set, err error) {
+	rows, err := getSetsStmt.Query()
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		set := Set{}
+		if err = scanSet(rows, &set); err != nil {
+			return
+		}
+		sets = append(sets, &set)
+	}
+
+	err = rows.Err()
+
+	return
+}
+
+func scanPhoto(row RowScanner, photo *Photo) error {
+	return row.Scan(
 		&photo.Aperture,
 		&photo.Camera,
 		&photo.ExposureComp,
@@ -216,7 +250,33 @@ func getPhotoById(photoId int) (*Photo, error) {
 		&photo.TakenAt,
 		&photo.Width,
 	)
-	return &photo, err
+}
+
+func getPhotoById(photoId int) (photo *Photo, err error) {
+	photo = &Photo{}
+	row := getPhotoStmt.QueryRow(photoId)
+	err = scanPhoto(row, photo)
+	return
+}
+
+func getPhotosBySetId(setId int) (photos []*Photo, err error) {
+	rows, err := getPhotosStmt.Query(setId)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		photo := Photo{}
+		if err = scanPhoto(rows, &photo); err != nil {
+			return
+		}
+		photos = append(photos, &photo)
+	}
+
+	err = rows.Err()
+
+	return
 }
 
 func getSetHandler(w http.ResponseWriter, r *http.Request) {
@@ -234,9 +294,23 @@ func getSetHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	if err != nil {
+		internalServerError(w, r)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(set)
+}
+
+func getSetsHandler(w http.ResponseWriter, r *http.Request) {
+	sets, err := getSets()
+	if err != nil {
+		internalServerError(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sets)
 }
 
 func getPhotoHandler(w http.ResponseWriter, r *http.Request) {
@@ -254,9 +328,32 @@ func getPhotoHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	if err != nil {
+		internalServerError(w, r)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(photo)
+}
+
+func getPhotosHandler(w http.ResponseWriter, r *http.Request) {
+	if requireParam("set_id", w, r) != nil {
+		return
+	}
+
+	setId, err := strconv.Atoi(r.URL.Query()["set_id"][0])
+	if err != nil {
+		log.Fatalln("Failed to convert id to integer:", err)
+	}
+
+	photos, err := getPhotosBySetId(setId)
+	if err != nil {
+		internalServerError(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(photos)
 }
 
 func setupDatabase() {
@@ -265,25 +362,47 @@ func setupDatabase() {
 		log.Fatalln("Failed to open database:", err)
 	}
 
-	getSetStmt, err = db.Prepare(`
-	SELECT
-	sets.id, name, photos_count, sets.taken_at, thumb_photo_id, photos.path
+	setAttrs := `sets.id, name, photos_count, sets.taken_at, thumb_photo_id,
+	photos.path`
+
+	getSetStmt, err = db.Prepare(fmt.Sprintf(`
+	SELECT %s
 	FROM sets
 	JOIN photos ON sets.thumb_photo_id = photos.id
 	WHERE sets.id = ?
-	`)
+	`, setAttrs))
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)
 	}
 
-	getPhotoStmt, err = db.Prepare(`
-	SELECT
-	aperture, camera, exposure_comp, exposure_time, flash, focal_length,
-	focal_length_35, height, id, iso, lat, lens, lng, next_photo_id, path,
-	prev_photo_id, set_id, size, taken_at, width
+	getSetsStmt, err = db.Prepare(fmt.Sprintf(`
+	SELECT %s
+	FROM sets
+	JOIN photos ON sets.thumb_photo_id = photos.id
+	ORDER BY sets.taken_at DESC
+	`, setAttrs))
+	if err != nil {
+		log.Fatalln("Failed to access table:", err)
+	}
+
+	photoAttrs := `aperture, camera, exposure_comp, exposure_time, flash,
+	focal_length, focal_length_35, height, id, iso, lat, lens, lng,
+	next_photo_id, path, prev_photo_id, set_id, size, taken_at, width`
+
+	getPhotoStmt, err = db.Prepare(fmt.Sprintf(`
+	SELECT %s
 	FROM photos
 	WHERE id = ?
-	`)
+	`, photoAttrs))
+	if err != nil {
+		log.Fatalln("Failed to access table:", err)
+	}
+
+	getPhotosStmt, err = db.Prepare(fmt.Sprintf(`
+	SELECT %s
+	FROM photos
+	WHERE set_id = ?
+	`, photoAttrs))
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)
 	}
@@ -293,11 +412,15 @@ func main() {
 	setupDatabase()
 	defer db.Close()
 	defer getSetStmt.Close()
+	defer getSetsStmt.Close()
 	defer getPhotoStmt.Close()
+	defer getPhotosStmt.Close()
 
 	http.Handle("/", http.FileServer(http.Dir("public"))) // static
 	http.HandleFunc("/set", getSetHandler)
+	http.HandleFunc("/sets", getSetsHandler)
 	http.HandleFunc("/photo", getPhotoHandler)
+	http.HandleFunc("/photos", getPhotosHandler)
 
 	fmt.Printf("Listening on http://%s\n", listenAddr)
 	fmt.Println("Press Ctrl-C to exit")

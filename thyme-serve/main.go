@@ -14,6 +14,7 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/gorilla/handlers"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -301,5 +302,5 @@ func main() {
 	fmt.Printf("Listening on http://%s\n", listenAddr)
 	fmt.Println("Press Ctrl-C to exit")
 
-	log.Fatal(http.ListenAndServe(listenAddr, nil))
+	log.Fatal(http.ListenAndServe(listenAddr, handlers.LoggingHandler(os.Stdout, http.DefaultServeMux)))
 }

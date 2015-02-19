@@ -395,7 +395,7 @@ func setupDatabase() {
 	}
 
 	getPhotosStmt, err = db.Prepare(fmt.Sprintf(`
-	SELECT %s FROM photos WHERE set_id = ?
+	SELECT %s FROM photos WHERE set_id = ? ORDER BY taken_at ASC
 	`, photoAttrs))
 	if err != nil {
 		log.Fatalln("Failed to access table:", err)

@@ -89,7 +89,7 @@ func main() {
 	ORDER BY sets.taken_at DESC, photos.taken_at ASC
 	`)
 	if err != nil {
-		log.Fatalln("Failed to query photos table:", err)
+		log.Fatalln("Failed to access table:", err)
 	}
 	defer rows.Close()
 

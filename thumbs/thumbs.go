@@ -71,7 +71,7 @@ func GenerateThumbs(thymePath string) {
 	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Fatalln("Failed to open database:", err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
@@ -81,23 +81,23 @@ func GenerateThumbs(thymePath string) {
 	ORDER BY sets.taken_at DESC, photos.taken_at ASC
 	`)
 	if err != nil {
-		log.Fatalln("Failed to access table:", err)
+		log.Fatal(err)
 	}
 	defer rows.Close()
 
 	err = db.QueryRow("SELECT COUNT(*) FROM photos").Scan(&photosCount)
 	if err != nil {
-		log.Fatalln("Failed to get photos count:", err)
+		log.Fatal(err)
 	}
 
 	thumbsPath, err = filepath.Abs(path.Join(thymePath, thumbsDir))
 	if err != nil {
-		log.Fatalln("Failed to resolve absolute path:", err)
+		log.Fatal(err)
 	}
 
 	err = os.MkdirAll(thumbsPath, os.ModeDir|0755)
 	if err != nil {
-		log.Fatalln("Failed to create thumbs path:", err)
+		log.Fatal(err)
 	}
 
 	// log to file because a progress bar is going to be rendered
@@ -126,7 +126,7 @@ func GenerateThumbs(thymePath string) {
 	for rows.Next() {
 		var photoPath string
 		if err := rows.Scan(&photoPath); err != nil {
-			log.Fatalln("Failed to get photo path:", err)
+			log.Fatal(err)
 		}
 		ch <- photoPath
 	}
@@ -135,7 +135,7 @@ func GenerateThumbs(thymePath string) {
 	wg.Wait()
 
 	if err := rows.Err(); err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	// Remove empty log file

@@ -286,7 +286,7 @@ func getSetHandler(w http.ResponseWriter, r *http.Request) {
 
 	setId, err := strconv.Atoi(r.URL.Query()["id"][0])
 	if err != nil {
-		log.Fatalln("Failed to convert id to integer:", err)
+		log.Fatal(err)
 	}
 
 	set, err := getSetById(setId)
@@ -320,7 +320,7 @@ func getPhotoHandler(w http.ResponseWriter, r *http.Request) {
 
 	photoId, err := strconv.Atoi(r.URL.Query()["id"][0])
 	if err != nil {
-		log.Fatalln("Failed to convert id to integer:", err)
+		log.Fatal(err)
 	}
 
 	photo, err := getPhotoById(photoId)
@@ -344,7 +344,7 @@ func getPhotosHandler(w http.ResponseWriter, r *http.Request) {
 
 	setId, err := strconv.Atoi(r.URL.Query()["set_id"][0])
 	if err != nil {
-		log.Fatalln("Failed to convert id to integer:", err)
+		log.Fatal(err)
 	}
 
 	photos, err := getPhotosBySetId(setId)
@@ -362,7 +362,7 @@ func setupDatabase() {
 	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")
 	db, err = sql.Open("sqlite3", dbPath) // := here shadows global db var
 	if err != nil {
-		log.Fatalln("Failed to open database:", err)
+		log.Fatal(err)
 	}
 
 	setAttrs := `sets.id, name, photos_count, sets.taken_at, thumb_photo_id,
@@ -374,7 +374,7 @@ func setupDatabase() {
 	WHERE sets.id = ?
 	`, setAttrs))
 	if err != nil {
-		log.Fatalln("Failed to access table:", err)
+		log.Fatal(err)
 	}
 
 	getSetsStmt, err = db.Prepare(fmt.Sprintf(`
@@ -383,7 +383,7 @@ func setupDatabase() {
 	ORDER BY sets.taken_at DESC
 	`, setAttrs))
 	if err != nil {
-		log.Fatalln("Failed to access table:", err)
+		log.Fatal(err)
 	}
 
 	photoAttrs := `aperture, camera, exposure_comp, exposure_time, flash,
@@ -394,14 +394,14 @@ func setupDatabase() {
 	SELECT %s FROM photos WHERE id = ?
 	`, photoAttrs))
 	if err != nil {
-		log.Fatalln("Failed to access table:", err)
+		log.Fatal(err)
 	}
 
 	getPhotosStmt, err = db.Prepare(fmt.Sprintf(`
 	SELECT %s FROM photos WHERE set_id = ? ORDER BY taken_at ASC
 	`, photoAttrs))
 	if err != nil {
-		log.Fatalln("Failed to access table:", err)
+		log.Fatal(err)
 	}
 }
 

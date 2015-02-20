@@ -393,14 +393,13 @@ func updateSets() error {
 	return nil
 }
 
-func ScanPhotos(paths ...string) {
+func setupDatabase() {
 	var err error
 
 	db, err = sql.Open("sqlite3", "thyme.db") // := here covers global db var
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer db.Close()
 
 	_, err = db.Exec(createSchemaSQL)
 	if err != nil {
@@ -411,19 +410,16 @@ func ScanPhotos(paths ...string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer selectSetStmt.Close()
 
 	selectPhotoStmt, err = db.Prepare("SELECT id FROM photos WHERE path = ?")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer selectPhotoStmt.Close()
 
 	insertSetStmt, err = db.Prepare("INSERT INTO sets (name) VALUES (?)")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer insertSetStmt.Close()
 
 	insertPhotoStmt, err = db.Prepare(`
 	INSERT INTO photos (
@@ -436,6 +432,14 @@ func ScanPhotos(paths ...string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func ScanPhotos(paths ...string) {
+	setupDatabase()
+	defer db.Close()
+	defer selectSetStmt.Close()
+	defer selectPhotoStmt.Close()
+	defer insertSetStmt.Close()
 	defer insertPhotoStmt.Close()
 
 	for _, path := range paths {

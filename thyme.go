@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/agorf/thyme-backend/photos"
@@ -8,22 +9,50 @@ import (
 	"github.com/agorf/thyme-backend/thumbs"
 )
 
+const helpText = `NAME:
+    thyme - browse and view your photos
+
+USAGE:
+    thyme command [arguments...]
+
+COMMANDS:
+    scan   <path>...  import photo metadata into database
+    thumbs <path>     generate photo thumbs (under <path>/public/thumbs)
+    run    [<path>]   run web server (rooted at <path>/public)
+`
+
 func main() {
-	if len(os.Args) < 2 {
-		return
+	var cmd string
+	var args []string
+
+	if len(os.Args) > 1 {
+		cmd = os.Args[1]
 	}
 
-	thymePath := "."
 	if len(os.Args) > 2 {
-		thymePath = os.Args[2]
+		args = os.Args[2:]
 	}
 
-	switch os.Args[1] {
-	case "scan-photos":
-		photos.ScanPhotos(os.Args[2:]...)
-	case "generate-thumbs":
-		thumbs.GenerateThumbs(thymePath)
-	case "serve":
+	switch cmd {
+	case "scan":
+		if len(args) == 0 {
+			fmt.Fprintln(os.Stderr, "no paths specified")
+			os.Exit(1)
+		}
+		photos.ScanPhotos(args...)
+	case "thumbs":
+		if len(args) == 0 {
+			fmt.Fprintln(os.Stderr, "no path specified")
+			os.Exit(1)
+		}
+		thumbs.GenerateThumbs(args[0])
+	case "run":
+		thymePath := "."
+		if len(args) > 0 {
+			thymePath = args[0]
+		}
 		server.Serve(thymePath)
+	default:
+		fmt.Println(helpText)
 	}
 }

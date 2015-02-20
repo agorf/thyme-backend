@@ -413,13 +413,14 @@ func Serve(thymePath string) {
 	defer getPhotoStmt.Close()
 	defer getPhotosStmt.Close()
 
-	http.Handle("/", http.FileServer(http.Dir(path.Join(thymePath, "public")))) // static
+	rootPath := path.Join(thymePath, "public")
+	http.Handle("/", http.FileServer(http.Dir(rootPath))) // static
 	http.HandleFunc("/set", getSetHandler)
 	http.HandleFunc("/sets", getSetsHandler)
 	http.HandleFunc("/photo", getPhotoHandler)
 	http.HandleFunc("/photos", getPhotosHandler)
 
-	fmt.Printf("Listening on http://%s\n", listenAddr)
+	fmt.Printf("Listening on http://%s serving path %q\n", listenAddr, rootPath)
 	fmt.Println("Press Ctrl-C to exit")
 
 	log.Fatal(http.ListenAndServe(listenAddr, handlers.LoggingHandler(os.Stdout, http.DefaultServeMux)))

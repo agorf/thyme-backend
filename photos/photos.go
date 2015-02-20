@@ -14,34 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Photo struct {
-	Aperture      sql.NullFloat64
-	Camera        sql.NullString
-	ExposureComp  sql.NullInt64
-	ExposureTime  sql.NullFloat64
-	Flash         sql.NullString
-	FocalLength   sql.NullFloat64
-	FocalLength35 sql.NullInt64
-	Height        int
-	ISO           sql.NullInt64
-	Lat           sql.NullFloat64
-	Lens          sql.NullString
-	Lng           sql.NullFloat64
-	Path          string
-	Size          int64
-	TakenAt       sql.NullString
-	Width         int
-}
-
-var (
-	db              *sql.DB
-	selectSetStmt   *sql.Stmt
-	selectPhotoStmt *sql.Stmt
-	insertSetStmt   *sql.Stmt
-	insertPhotoStmt *sql.Stmt
-)
-
-var createSchemaSQL = `
+const createSchemaSQL = `
 CREATE TABLE IF NOT EXISTS sets (
 	id integer NOT NULL PRIMARY KEY,
 	thumb_photo_id integer UNIQUE REFERENCES photos,
@@ -81,6 +54,33 @@ CREATE INDEX IF NOT EXISTS photos_prev_photo_id_index ON photos (prev_photo_id);
 
 CREATE INDEX IF NOT EXISTS photos_next_photo_id_index ON photos (next_photo_id);
 `
+
+var (
+	db              *sql.DB
+	selectSetStmt   *sql.Stmt
+	selectPhotoStmt *sql.Stmt
+	insertSetStmt   *sql.Stmt
+	insertPhotoStmt *sql.Stmt
+)
+
+type Photo struct {
+	Aperture      sql.NullFloat64
+	Camera        sql.NullString
+	ExposureComp  sql.NullInt64
+	ExposureTime  sql.NullFloat64
+	Flash         sql.NullString
+	FocalLength   sql.NullFloat64
+	FocalLength35 sql.NullInt64
+	Height        int
+	ISO           sql.NullInt64
+	Lat           sql.NullFloat64
+	Lens          sql.NullString
+	Lng           sql.NullFloat64
+	Path          string
+	Size          int64
+	TakenAt       sql.NullString
+	Width         int
+}
 
 func decodePhotoExif(photo *Photo, x *exif.Exif) {
 	takenAt, err := x.DateTime()

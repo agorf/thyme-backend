@@ -357,7 +357,10 @@ func getPhotosHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setupDatabase() {
-	db, err := sql.Open("sqlite3", "thyme.db")
+	var err error
+
+	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")
+	db, err = sql.Open("sqlite3", dbPath) // := here shadows global db var
 	if err != nil {
 		log.Fatalln("Failed to open database:", err)
 	}
@@ -402,7 +405,7 @@ func setupDatabase() {
 	}
 }
 
-func Serve() {
+func Serve(thymePath string) {
 	setupDatabase()
 	defer db.Close()
 	defer getSetStmt.Close()
@@ -410,7 +413,7 @@ func Serve() {
 	defer getPhotoStmt.Close()
 	defer getPhotosStmt.Close()
 
-	http.Handle("/", http.FileServer(http.Dir("public"))) // static
+	http.Handle("/", http.FileServer(http.Dir(path.Join(thymePath, "public")))) // static
 	http.HandleFunc("/set", getSetHandler)
 	http.HandleFunc("/sets", getSetsHandler)
 	http.HandleFunc("/photo", getPhotoHandler)

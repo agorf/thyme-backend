@@ -20,14 +20,11 @@ const (
 	workers   = 4 // should be at least 1
 )
 
-func generateThumb(photoPath, baseName, thumbSize string, crop bool) (thumbPath string, err error) {
-	thumbPath, err = filepath.Abs(baseName)
-	if err != nil {
-		return
-	}
+var thumbsPath string
 
-	if _, err = os.Stat(thumbPath); err == nil { // file exists
-		return
+func generateThumb(photoPath, thumbPath, thumbSize string, crop bool) error {
+	if _, err := os.Stat(thumbPath); err == nil { // file exists
+		return err
 	}
 
 	vipsOpts := []string{
@@ -42,25 +39,25 @@ func generateThumb(photoPath, baseName, thumbSize string, crop bool) (thumbPath 
 	}
 
 	cmdArgs := append([]string{photoPath}, vipsOpts...)
-	err = exec.Command("vipsthumbnail", cmdArgs...).Run()
-
-	return
+	return exec.Command("vipsthumbnail", cmdArgs...).Run()
 }
 
 func generateThumbs(photoPath string) (err error) {
 	smallThumbPhotoPath := photoPath
 
 	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
-	thumbPathFmt := path.Join(thumbsDir, fmt.Sprintf("%s_%%s.jpg", identifier))
+	thumbPathFmt := path.Join(thumbsPath, fmt.Sprintf("%s_%%s.jpg", identifier))
+	bigThumbPath := fmt.Sprintf(thumbPathFmt, "big")
+	smallThumbPath := fmt.Sprintf(thumbPathFmt, "small")
 
-	bigThumbPath, err := generateThumb(photoPath, fmt.Sprintf(thumbPathFmt, "big"), "1000", false)
+	err = generateThumb(photoPath, bigThumbPath, "1000", false)
 	if err == nil {
 		smallThumbPhotoPath = bigThumbPath // create small thumb from big for speed
 	} else {
 		log.Println("Failed to create", bigThumbPath, "for", photoPath, "with error:", err)
 	}
 
-	smallThumbPath, err := generateThumb(smallThumbPhotoPath, fmt.Sprintf(thumbPathFmt, "small"), "200", true)
+	err = generateThumb(smallThumbPhotoPath, smallThumbPath, "200", true)
 	if err != nil {
 		log.Println("Failed to create", smallThumbPath, "for", photoPath, "with error:", err)
 	}
@@ -68,7 +65,7 @@ func generateThumbs(photoPath string) (err error) {
 	return
 }
 
-func GenerateThumbs() {
+func GenerateThumbs(thymePath string) {
 	var photosCount int
 
 	logFile, err := os.Create("thyme-generate-thumbs.log")
@@ -77,7 +74,8 @@ func GenerateThumbs() {
 	}
 	defer logFile.Close()
 
-	db, err := sql.Open("sqlite3", "thyme.db")
+	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Fatalln("Failed to open database:", err)
 	}
@@ -98,9 +96,14 @@ func GenerateThumbs() {
 		log.Fatalln("Failed to get photos count:", err)
 	}
 
-	err = os.MkdirAll(thumbsDir, os.ModeDir|0755)
+	thumbsPath, err = filepath.Abs(path.Join(thymePath, thumbsDir))
 	if err != nil {
-		log.Fatalln("Failed to create thumbs directory:", err)
+		log.Fatalln("Failed to resolve absolute path:", err)
+	}
+
+	err = os.MkdirAll(thumbsPath, os.ModeDir|0755)
+	if err != nil {
+		log.Fatalln("Failed to create thumbs path:", err)
 	}
 
 	ch := make(chan string)

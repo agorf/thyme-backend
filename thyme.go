@@ -13,12 +13,17 @@ func main() {
 		return
 	}
 
+	thymePath := "."
+	if len(os.Args) > 2 {
+		thymePath = os.Args[2]
+	}
+
 	switch os.Args[1] {
 	case "scan-photos":
 		photos.ScanPhotos(os.Args[2:]...)
 	case "generate-thumbs":
-		thumbs.GenerateThumbs()
+		thumbs.GenerateThumbs(thymePath)
 	case "serve":
-		server.Serve()
+		server.Serve(thymePath)
 	}
 }

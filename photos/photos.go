@@ -8,6 +8,7 @@ import (
 	"log"
 	"mime"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/agorf/goexif/exif"
@@ -396,7 +397,8 @@ func updateSets() error {
 func setupDatabase() {
 	var err error
 
-	db, err = sql.Open("sqlite3", "thyme.db") // := here covers global db var
+	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")
+	db, err = sql.Open("sqlite3", dbPath) // := here shadows global db var
 	if err != nil {
 		log.Fatalln(err)
 	}

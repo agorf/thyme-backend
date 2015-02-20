@@ -1,4 +1,4 @@
-package main
+package thumbs
 
 import (
 	"crypto/md5"
@@ -68,7 +68,7 @@ func generateThumbs(photoPath string) (err error) {
 	return
 }
 
-func main() {
+func GenerateThumbs() {
 	var photosCount int
 
 	logFile, err := os.Create("thyme-generate-thumbs.log")

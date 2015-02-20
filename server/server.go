@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"crypto/md5"
@@ -402,7 +402,7 @@ func setupDatabase() {
 	}
 }
 
-func main() {
+func Serve() {
 	setupDatabase()
 	defer db.Close()
 	defer getSetStmt.Close()

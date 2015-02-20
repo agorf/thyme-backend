@@ -1,4 +1,4 @@
-package main
+package photos
 
 import (
 	"database/sql"
@@ -393,13 +393,8 @@ func updateSets() error {
 	return nil
 }
 
-func main() {
+func ScanPhotos(paths ...string) {
 	var err error
-
-	if len(os.Args) == 1 {
-		fmt.Fprintf(os.Stderr, "usage: %v path [path...]\n", os.Args[0])
-		return
-	}
 
 	db, err = sql.Open("sqlite3", "thyme.db") // := here covers global db var
 	if err != nil {
@@ -443,8 +438,8 @@ func main() {
 	}
 	defer insertPhotoStmt.Close()
 
-	for i := 1; i < len(os.Args); i++ {
-		filepath.Walk(os.Args[i], walkPath)
+	for _, path := range paths {
+		filepath.Walk(path, walkPath)
 	}
 
 	updatePhotoSiblings()

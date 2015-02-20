@@ -68,12 +68,6 @@ func generateThumbs(photoPath string) (err error) {
 func GenerateThumbs(thymePath string) {
 	var photosCount int
 
-	logFile, err := os.Create("thyme-generate-thumbs.log")
-	if err == nil {
-		log.SetOutput(logFile)
-	}
-	defer logFile.Close()
-
 	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -105,6 +99,13 @@ func GenerateThumbs(thymePath string) {
 	if err != nil {
 		log.Fatalln("Failed to create thumbs path:", err)
 	}
+
+	// log to file because a progress bar is going to be rendered
+	logFile, err := os.Create("thyme-generate-thumbs.log")
+	if err == nil {
+		log.SetOutput(logFile)
+	}
+	defer logFile.Close()
 
 	ch := make(chan string)
 	wg := sync.WaitGroup{}

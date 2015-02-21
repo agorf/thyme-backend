@@ -436,7 +436,7 @@ func setupDatabase() {
 	}
 }
 
-func ScanPhotos(paths ...string) {
+func Scan(paths ...string) {
 	setupDatabase()
 	defer db.Close()
 	defer selectSetStmt.Close()

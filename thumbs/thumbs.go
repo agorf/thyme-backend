@@ -65,7 +65,7 @@ func generateThumbs(photoPath string) (err error) {
 	return
 }
 
-func GenerateThumbs(thymePath string) {
+func Generate(thymePath string) {
 	var photosCount int
 
 	dbPath := path.Join(os.Getenv("HOME"), ".thyme.db")

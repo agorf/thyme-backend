@@ -39,13 +39,13 @@ func main() {
 			fmt.Fprintln(os.Stderr, "no paths specified")
 			os.Exit(1)
 		}
-		photos.ScanPhotos(args...)
+		photos.Scan(args...)
 	case "thumbs":
 		if len(args) == 0 {
 			fmt.Fprintln(os.Stderr, "no path specified")
 			os.Exit(1)
 		}
-		thumbs.GenerateThumbs(args[0])
+		thumbs.Generate(args[0])
 	case "run":
 		thymePath := "."
 		if len(args) > 0 {

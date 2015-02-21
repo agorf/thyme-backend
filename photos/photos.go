@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS sets (
 	taken_at char(19)
 );
 
-CREATE INDEX IF NOT EXISTS sets_thumb_photo_id_index ON sets (thumb_photo_id);
+CREATE UNIQUE INDEX IF NOT EXISTS sets_thumb_photo_id_index ON sets (thumb_photo_id);
 
 CREATE TABLE IF NOT EXISTS photos (
 	id integer NOT NULL PRIMARY KEY,
@@ -51,9 +51,9 @@ CREATE TABLE IF NOT EXISTS photos (
 
 CREATE INDEX IF NOT EXISTS photos_set_id_index ON photos (set_id);
 
-CREATE INDEX IF NOT EXISTS photos_prev_photo_id_index ON photos (prev_photo_id);
+CREATE UNIQUE INDEX IF NOT EXISTS photos_prev_photo_id_index ON photos (prev_photo_id);
 
-CREATE INDEX IF NOT EXISTS photos_next_photo_id_index ON photos (next_photo_id);
+CREATE UNIQUE INDEX IF NOT EXISTS photos_next_photo_id_index ON photos (next_photo_id);
 `
 
 var (

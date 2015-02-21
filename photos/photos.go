@@ -197,19 +197,19 @@ func decodePhoto(path string) (*Photo, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		return &photo, err
+		return nil, err
 	}
 	defer f.Close()
 
 	fi, err := f.Stat()
 	if err != nil {
-		return &photo, err
+		return nil, err
 	}
 	photo.Size = fi.Size()
 
 	img, _, err := image.DecodeConfig(f)
 	if err != nil {
-		return &photo, err
+		return nil, err
 	}
 	photo.Width, photo.Height = img.Width, img.Height
 

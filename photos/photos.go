@@ -85,148 +85,146 @@ type Photo struct {
 	Width         int
 }
 
-func decodePhotoExif(photo *Photo, x *exif.Exif) {
+func (p *Photo) decodeExif(x *exif.Exif) {
 	takenAt, err := x.DateTime()
 	if err == nil {
-		photo.TakenAt.String = takenAt.UTC().Format("2006-01-02 15:04:05")
-		photo.TakenAt.Valid = true
+		p.TakenAt.String = takenAt.UTC().Format("2006-01-02 15:04:05")
+		p.TakenAt.Valid = true
 	}
 
 	lat, lng, err := x.LatLong()
 	if err == nil {
-		photo.Lat.Float64 = lat
-		photo.Lat.Valid = true
-		photo.Lng.Float64 = lng
-		photo.Lng.Valid = true
+		p.Lat.Float64 = lat
+		p.Lat.Valid = true
+		p.Lng.Float64 = lng
+		p.Lng.Valid = true
 	}
 
 	orientTag, err := x.Get(exif.Orientation)
 	if err == nil {
 		switch orient, _ := orientTag.Int(0); orient {
 		case 5, 6, 7, 8: // rotated
-			photo.Width, photo.Height = photo.Height, photo.Width // swap
+			p.Width, p.Height = p.Height, p.Width // swap
 		}
 	}
 
 	camMakeTag, err := x.Get(exif.Make)
 	if err == nil {
-		photo.Camera.String, _ = camMakeTag.StringVal()
-		photo.Camera.Valid = true
+		p.Camera.String, _ = camMakeTag.StringVal()
+		p.Camera.Valid = true
 	}
 
 	camModelTag, err := x.Get(exif.Model)
 	if err == nil {
 		cameraModel, _ := camModelTag.StringVal()
 
-		if photo.Camera.Valid {
-			photo.Camera.String = fmt.Sprint(photo.Camera.String, " ", cameraModel)
+		if p.Camera.Valid {
+			p.Camera.String = fmt.Sprint(p.Camera.String, " ", cameraModel)
 		} else {
-			photo.Camera.String = cameraModel
-			photo.Camera.Valid = true
+			p.Camera.String = cameraModel
+			p.Camera.Valid = true
 		}
 	}
 
 	lensMakeTag, err := x.Get(exif.LensMake)
 	if err == nil {
-		photo.Lens.String, _ = lensMakeTag.StringVal()
-		photo.Lens.Valid = true
+		p.Lens.String, _ = lensMakeTag.StringVal()
+		p.Lens.Valid = true
 	}
 
 	lensModelTag, err := x.Get(exif.LensModel)
 	if err == nil {
 		lensModel, _ := lensModelTag.StringVal()
 
-		if photo.Lens.Valid {
-			photo.Lens.String = fmt.Sprint(photo.Lens.String, " ", lensModel)
+		if p.Lens.Valid {
+			p.Lens.String = fmt.Sprint(p.Lens.String, " ", lensModel)
 		} else {
-			photo.Lens.String = lensModel
-			photo.Lens.Valid = true
+			p.Lens.String = lensModel
+			p.Lens.Valid = true
 		}
 	}
 
 	focalLenTag, err := x.Get(exif.FocalLength)
 	if err == nil {
 		focalLen, _ := focalLenTag.Rat(0)
-		photo.FocalLength.Float64, _ = focalLen.Float64()
-		photo.FocalLength.Valid = true
+		p.FocalLength.Float64, _ = focalLen.Float64()
+		p.FocalLength.Valid = true
 	}
 
 	focalLen35Tag, err := x.Get(exif.FocalLengthIn35mmFilm)
 	if err == nil {
-		photo.FocalLength35.Int64, _ = focalLen35Tag.Int64(0)
-		photo.FocalLength35.Valid = true
+		p.FocalLength35.Int64, _ = focalLen35Tag.Int64(0)
+		p.FocalLength35.Valid = true
 	}
 
 	apertureTag, err := x.Get(exif.FNumber)
 	if err == nil {
 		aperture, _ := apertureTag.Rat(0)
-		photo.Aperture.Float64, _ = aperture.Float64()
-		photo.Aperture.Valid = true
+		p.Aperture.Float64, _ = aperture.Float64()
+		p.Aperture.Valid = true
 	}
 
 	expTimeTag, err := x.Get(exif.ExposureTime)
 	if err == nil {
 		expTime, _ := expTimeTag.Rat(0)
-		photo.ExposureTime.Float64, _ = expTime.Float64()
-		photo.ExposureTime.Valid = true
+		p.ExposureTime.Float64, _ = expTime.Float64()
+		p.ExposureTime.Valid = true
 	}
 
 	isoTag, err := x.Get(exif.ISOSpeedRatings)
 	if err == nil {
-		photo.ISO.Int64, _ = isoTag.Int64(0)
-		photo.ISO.Valid = true
+		p.ISO.Int64, _ = isoTag.Int64(0)
+		p.ISO.Valid = true
 	}
 
 	expBiasTag, err := x.Get(exif.ExposureBiasValue)
 	if err == nil {
-		photo.ExposureComp.Int64, _ = expBiasTag.Int64(0)
-		photo.ExposureComp.Valid = true
+		p.ExposureComp.Int64, _ = expBiasTag.Int64(0)
+		p.ExposureComp.Valid = true
 	}
 
 	flash, err := x.Flash()
 	if err == nil {
-		photo.Flash.String = flash
-		photo.Flash.Valid = true
+		p.Flash.String = flash
+		p.Flash.Valid = true
 	}
 }
 
-func decodePhoto(path string) (*Photo, error) {
-	var photo Photo
-
-	photo.Path = path
+func (p *Photo) decode(path string) error {
+	p.Path = path
 
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
 
 	fi, err := f.Stat()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	photo.Size = fi.Size()
+	p.Size = fi.Size()
 
 	img, _, err := image.DecodeConfig(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	photo.Width, photo.Height = img.Width, img.Height
+	p.Width, p.Height = img.Width, img.Height
 
 	f.Seek(0, 0) // rewind
 
 	x, err := exif.Decode(f)
 	if err == nil { // EXIF data exists
-		decodePhotoExif(&photo, x)
+		p.decodeExif(x)
 	}
 
-	return &photo, nil
+	return nil
 }
 
-func storePhoto(photo *Photo) error {
+func (p *Photo) store() error {
 	var setId, photoId int64
 
-	setName := filepath.Base(filepath.Dir(photo.Path))
+	setName := filepath.Base(filepath.Dir(p.Path))
 	row := selectSetStmt.QueryRow(setName)
 	if err := row.Scan(&setId); err == sql.ErrNoRows { // set does not exist
 		result, err := insertSetStmt.Exec(setName) // create it
@@ -240,12 +238,12 @@ func storePhoto(photo *Photo) error {
 		}
 	}
 
-	row = selectPhotoStmt.QueryRow(photo.Path)
+	row = selectPhotoStmt.QueryRow(p.Path)
 	if err := row.Scan(&photoId); err == sql.ErrNoRows { // photo does not exist
-		result, err := insertPhotoStmt.Exec(photo.Aperture, photo.Camera,
-			photo.ExposureComp, photo.ExposureTime, photo.Flash, photo.FocalLength,
-			photo.FocalLength35, photo.Height, photo.ISO, photo.Lat, photo.Lens,
-			photo.Lng, photo.Path, setId, photo.Size, photo.TakenAt, photo.Width) // create it
+		result, err := insertPhotoStmt.Exec(p.Aperture, p.Camera,
+			p.ExposureComp, p.ExposureTime, p.Flash, p.FocalLength,
+			p.FocalLength35, p.Height, p.ISO, p.Lat, p.Lens,
+			p.Lng, p.Path, setId, p.Size, p.TakenAt, p.Width) // create it
 		if err != nil {
 			return err
 		}
@@ -255,7 +253,7 @@ func storePhoto(photo *Photo) error {
 			return err
 		}
 
-		fmt.Printf("photos id=%d path=%s\n", photoId, photo.Path)
+		fmt.Printf("photos id=%d path=%s\n", photoId, p.Path)
 	}
 
 	return nil
@@ -282,9 +280,9 @@ func walkPath(path string, info os.FileInfo, err error) error {
 		return nil // skip
 	}
 
-	photo, err := decodePhoto(path)
-	if err == nil {
-		storePhoto(photo)
+	photo := &Photo{}
+	if err := photo.decode(path); err == nil {
+		photo.store()
 	}
 
 	return nil // next

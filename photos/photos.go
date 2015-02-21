@@ -54,6 +54,8 @@ CREATE INDEX IF NOT EXISTS photos_set_id_index ON photos (set_id);
 CREATE UNIQUE INDEX IF NOT EXISTS photos_prev_photo_id_index ON photos (prev_photo_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS photos_next_photo_id_index ON photos (next_photo_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS photos_path_index ON photos (path);
 `
 
 var (

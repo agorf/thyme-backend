@@ -51,7 +51,7 @@ func main() {
 		if len(args) > 0 {
 			thymePath = args[0]
 		}
-		server.Serve(thymePath)
+		server.Run(thymePath)
 	default:
 		fmt.Println(helpText)
 	}

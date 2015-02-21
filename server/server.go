@@ -403,7 +403,7 @@ func setupDatabase() {
 	}
 }
 
-func Serve(thymePath string) {
+func Run(thymePath string) {
 	setupDatabase()
 	defer db.Close()
 	defer getSetStmt.Close()

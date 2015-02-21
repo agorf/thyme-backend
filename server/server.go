@@ -19,9 +19,8 @@ import (
 )
 
 const (
-	listenAddr     = "127.0.0.1:9292"
-	bigThumbSize   = 1000
-	smallThumbSize = 200
+	listenAddr   = "127.0.0.1:9292"
+	bigThumbSize = 1000
 )
 
 var (

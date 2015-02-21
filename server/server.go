@@ -64,7 +64,7 @@ type Photo struct {
 }
 
 // used by scanSet and scanPhoto to accept row(s)
-type RowScanner interface {
+type rowScanner interface {
 	Scan(dest ...interface{}) error
 }
 
@@ -188,7 +188,7 @@ func requireParam(param string, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func scanSet(row RowScanner, set *Set) error {
+func scanSet(row rowScanner, set *Set) error {
 	return row.Scan(
 		&set.Id,
 		&set.Name,
@@ -226,7 +226,7 @@ func getSets() (sets []*Set, err error) {
 	return
 }
 
-func scanPhoto(row RowScanner, photo *Photo) error {
+func scanPhoto(row rowScanner, photo *Photo) error {
 	return row.Scan(
 		&photo.Aperture,
 		&photo.Camera,

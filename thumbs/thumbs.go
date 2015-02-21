@@ -1,9 +1,7 @@
 package thumbs
 
 import (
-	"crypto/md5"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -11,6 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/agorf/thyme-backend/thumb"
 	"github.com/cheggaaa/pb"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -44,11 +43,8 @@ func generateThumb(photoPath, thumbPath, thumbSize string, crop bool) error {
 
 func generateThumbs(photoPath string) (err error) {
 	smallThumbPhotoPath := photoPath
-
-	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
-	thumbPathFmt := path.Join(thumbsPath, fmt.Sprintf("%s_%%s.jpg", identifier))
-	bigThumbPath := fmt.Sprintf(thumbPathFmt, "big")
-	smallThumbPath := fmt.Sprintf(thumbPathFmt, "small")
+	bigThumbPath := path.Join(thumbsPath, thumb.Basename(photoPath, "big"))
+	smallThumbPath := path.Join(thumbsPath, thumb.Basename(photoPath, "small"))
 
 	err = generateThumb(photoPath, bigThumbPath, "1000", false)
 	if err == nil {

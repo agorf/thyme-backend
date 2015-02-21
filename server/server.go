@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/md5"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -14,6 +13,7 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/agorf/thyme-backend/thumb"
 	"github.com/gorilla/handlers"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -69,13 +69,12 @@ type RowScanner interface {
 	Scan(dest ...interface{}) error
 }
 
-func thumbURL(photoPath, suffix string) string {
-	identifier := fmt.Sprintf("%x", md5.Sum([]byte(photoPath)))
-	return fmt.Sprintf("/thumbs/%s_%s.jpg", identifier, suffix)
+func urlPath(photoPath, suffix string) string {
+	return path.Join("", "thumbs", thumb.Basename(photoPath, suffix))
 }
 
 func (s *Set) ThumbURL() string {
-	return thumbURL(s.ThumbPhotoPath, "small")
+	return urlPath(s.ThumbPhotoPath, "small")
 }
 
 func (s *Set) MarshalJSON() ([]byte, error) { // implements Marshaler
@@ -133,7 +132,7 @@ func (p *Photo) Orientation() string {
 }
 
 func (p *Photo) ThumbURL(suffix string) string {
-	return thumbURL(p.Path, suffix)
+	return urlPath(p.Path, suffix)
 }
 
 func (p *Photo) MarshalJSON() ([]byte, error) { // implements Marshaler

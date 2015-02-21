@@ -174,9 +174,10 @@ func badRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, http.StatusBadRequest, "Bad Request")
 }
 
-func internalServerError(w http.ResponseWriter, r *http.Request) {
+func internalServerError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprintln(w, http.StatusInternalServerError, "Internal Server Error")
+	log.Print(err)
 }
 
 func requireParam(param string, w http.ResponseWriter, r *http.Request) error {
@@ -293,7 +294,7 @@ func getSetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		internalServerError(w, r)
+		internalServerError(w, r, err)
 		return
 	}
 
@@ -304,7 +305,7 @@ func getSetHandler(w http.ResponseWriter, r *http.Request) {
 func getSetsHandler(w http.ResponseWriter, r *http.Request) {
 	sets, err := getSets()
 	if err != nil {
-		internalServerError(w, r)
+		internalServerError(w, r, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -327,7 +328,7 @@ func getPhotoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		internalServerError(w, r)
+		internalServerError(w, r, err)
 		return
 	}
 
@@ -347,7 +348,7 @@ func getPhotosHandler(w http.ResponseWriter, r *http.Request) {
 
 	photos, err := getPhotosBySetId(setId)
 	if err != nil {
-		internalServerError(w, r)
+		internalServerError(w, r, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

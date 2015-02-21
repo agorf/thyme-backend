@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"github.com/agorf/thyme-backend/thumb"
@@ -15,20 +16,22 @@ import (
 )
 
 const (
-	thumbsDir = "public/thumbs"
-	workers   = 4 // should be at least 1
+	bigThumbSize   = 1000
+	smallThumbSize = 200
+	thumbsDir      = "public/thumbs"
+	workers        = 4 // should be at least 1
 )
 
 var thumbsPath string
 
-func generateThumb(photoPath, thumbPath, thumbSize string, crop bool) error {
+func generateThumb(photoPath, thumbPath string, thumbSize int, crop bool) error {
 	if _, err := os.Stat(thumbPath); err == nil { // file exists
 		return err
 	}
 
 	vipsOpts := []string{
 		"--rotate",
-		"--size", thumbSize,
+		"--size", strconv.Itoa(thumbSize),
 		"--interpolator", "bicubic",
 		"--output", thumbPath + "[Q=97,no_subsample,strip]",
 	}
@@ -46,14 +49,14 @@ func generateThumbs(photoPath string) (err error) {
 	bigThumbPath := path.Join(thumbsPath, thumb.Basename(photoPath, "big"))
 	smallThumbPath := path.Join(thumbsPath, thumb.Basename(photoPath, "small"))
 
-	err = generateThumb(photoPath, bigThumbPath, "1000", false)
+	err = generateThumb(photoPath, bigThumbPath, bigThumbSize, false)
 	if err == nil {
 		smallThumbPhotoPath = bigThumbPath // create small thumb from big for speed
 	} else {
 		log.Println("Failed to create", bigThumbPath, "for", photoPath, "with error:", err)
 	}
 
-	err = generateThumb(smallThumbPhotoPath, smallThumbPath, "200", true)
+	err = generateThumb(smallThumbPhotoPath, smallThumbPath, smallThumbSize, true)
 	if err != nil {
 		log.Println("Failed to create", smallThumbPath, "for", photoPath, "with error:", err)
 	}

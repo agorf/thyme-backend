@@ -261,16 +261,24 @@ func storePhoto(photo *Photo) error {
 	return nil
 }
 
+func isPhoto(path string, info os.FileInfo) bool {
+	if info.IsDir() {
+		return false
+	}
+
+	if mime.TypeByExtension(filepath.Ext(path)) != "image/jpeg" { // not JPEG
+		return false
+	}
+
+	return true
+}
+
 func walkPath(path string, info os.FileInfo, err error) error {
 	if err != nil { // error walking "path"
 		return nil // skip
 	}
 
-	if info.IsDir() {
-		return nil // skip
-	}
-
-	if mime.TypeByExtension(filepath.Ext(path)) != "image/jpeg" { // not JPEG
+	if !isPhoto(path, info) {
 		return nil // skip
 	}
 
